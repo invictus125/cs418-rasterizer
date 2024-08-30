@@ -1,8 +1,9 @@
 from library import should_run, get_handler, write_image
+from state import State
 import sys
 
 # Vars
-master_state = {}
+master_state = State()
 
 lines = []
 with open(sys.argv[1]) as file:

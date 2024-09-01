@@ -3,22 +3,63 @@ import numpy as np
 from math import ceil
 
 
-def scan_line(left, right, colors, state: State):
-    d_vec = np.subtract(right, left) / (right[0] - left[0])
-    o_vec = (ceil(left[0]) - left[0]) * d_vec
+class DDAEdge:
+    def __init__(
+            self,
+            end1: list[float], # Point to step from
+            end2: list[float], # Point to step toward
+            step_dimension: int, # Which dimension to step along
+    ):
+        self.end1 = np.array(end1)
+        self.end2 = np.array(end2)
+        self.step_dimension = step_dimension
 
-    # Apply offset
-    spot = np.add(np.copy(left), o_vec)
+        # Calculate step vector
+        self.step_direction = 1 if self.end2[step_dimension] > self.end1[step_dimension] else -1
+        self.step_vector = self.step_direction * np.array(
+            np.subtract(self.end1, self.end2)
+            / (self.end1[self.step_dimension] - self.end2[self.step_dimension])
+        )
+
+        # Calculate and apply offset
+        offset_vector = (ceil(self.end1[self.step_dimension]) - self.end1[self.step_dimension]) * self.step_vector
+        self.spot = np.add(self.end1, offset_vector)
+        
+    def step(self):
+        self.spot = np.add(self.spot, self.step_vector)
+        if (
+            (self.step_direction < 0 and self.spot[self.step_dimension] < self.end2[self.step_dimension])
+            or
+            (self.step_direction > 0 and self.spot[self.step_dimension] > self.end2[self.step_dimension])
+        ):
+            return None
+        
+        return self.spot
+    
+    def get_goal_end(self):
+        return self.end2
+    
+    def get_current_point(self):
+        return self.spot
+
+
+def scan_line(left, right, colors, state: State):
+    if left[0] == right[0]:
+        return
+
+    x_edge = DDAEdge(left, right, 0)
+    spot = x_edge.get_current_point()
 
     # Traverse horizontally and find pixel coords
-    while spot[0] < right[0]:
+    while spot is not None:
         print(f'pixel found: ({spot[0]}, {left[1]})')
 
         # TODO: interpolate color
 
-        # TODO: write pixel into state png
 
-        spot = spot + d_vec
+        # state.out_img.im.putpixel((spot[0], left[1]), (r,g,b,a))
+
+        spot = x_edge.step()
 
 
 def draw_triangle(place: int, state: State):
@@ -38,37 +79,38 @@ def draw_triangle(place: int, state: State):
     mb = [sorted_points[0], sorted_points[1]]
     tm = [sorted_points[1], sorted_points[2]]
 
-    # Calculate unit vectors in Y-direction
-    d_vec_tb = np.subtract(tb[1], tb[0]) / (tb[1][1] - tb[0][1])
-    d_vec_mb = np.subtract(mb[1], mb[0]) / (mb[1][1] - mb[0][1])
-    d_vec_tm = np.subtract(tm[1], tm[0]) / (tm[1][1] - tm[0][1])
+    print(f'TB: {tb}\nTM: {tm}\nMB: {mb}')
 
-    # Calculate offset vectors (from top)
-    o_vec_tb = (ceil(tb[1][1]) - tb[1][1]) * d_vec_tb
-    o_vec_mb = (ceil(mb[1][1]) - mb[1][1]) * d_vec_mb
-    o_vec_tm = (ceil(tm[1][1]) - tm[1][1]) * d_vec_tm
+    if tb[0][0] < tm[0][0]:
+        left_edge = DDAEdge(tb[1], tb[0], 1)
+        right_edge = DDAEdge(tm[1], tm[0], 1)
+        print('left edge is tb')
+    else:
+        left_edge = DDAEdge(tm[1], tm[0], 1)
+        right_edge = DDAEdge(tb[1], tb[0], 1)
+        print('left edge is tm')
 
-    # Apply offsets
-    tb[1] = np.subtract(tb[1], o_vec_tb)
-    mb[1] = np.subtract(mb[1], o_vec_mb)
-    tm[1] = np.subtract(tm[1], o_vec_tm)
+    # Get starting spots after offset is applied
+    spot_left = left_edge.get_current_point()
+    spot_right = right_edge.get_current_point()
 
-    # Find integer y-values along triangle edges
-    left_edge = tb if tb[0][0] < tm[0][0] else tm
-    left_step = d_vec_tb if tb[0][0] < tm[0][0] else d_vec_tm
-    right_edge = tb if tb[0][0] >= tm[0][0] else tm
-    right_step = d_vec_tb if tb[0][0] >= tm[0][0] else d_vec_tm
-    spot_left = left_edge[1]
-    spot_right = right_edge[1]
-    while spot_left[1] >= tb[0][1]:
+    print(f'start points: <- {spot_left} and -> {spot_right}')
+
+    corner_turned = False
+    while spot_left is not None and spot_right is not None:
         scan_line(spot_left, spot_right, colors, state)
-        spot_left = np.subtract(spot_left, left_step)
-        spot_right = np.subtract(spot_right, right_step)
+
+        spot_left = left_edge.step()
+        spot_right = right_edge.step()
 
         # Turn the corner if needed
-        if spot_left[1] < left_edge[0][1]:
-            left_edge = mb
-            left_step = d_vec_mb
-        elif spot_right[1] < right_edge[0][1]:
-            right_edge = mb
-            right_step = d_vec_mb
+        if not corner_turned and spot_left is None:
+            left_edge = DDAEdge(mb[1], mb[0], 1)
+            spot_left = left_edge.get_current_point()
+            corner_turned = True
+            print('corner turned on left')
+        elif not corner_turned and spot_right is None:
+            right_edge = DDAEdge(mb[1], mb[0], 1)
+            spot_right = right_edge.get_current_point()
+            corner_turned = True
+            print('corner turned on right')

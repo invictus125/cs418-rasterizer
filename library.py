@@ -40,6 +40,26 @@ def _parse_parameterized_number_array(per_tuple: int, part_array: list[int | flo
     return parsed
 
 
+# def _adjust_for_view_size(points: list[list[float]], x_size: int, y_size: int):
+#     points = np.array(points)
+
+#     min_cols = np.min(points, axis=0)
+#     min_x = 
+
+#     print(f'BEFORE ADJ: {points}')
+#     for idx in range(np.shape(points)[1]):
+#         point = points[idx][:]
+#         w = point[3] if len(point) == 4 else 1
+
+#         # Move X and Y coords according to the available viewport
+#         point[0] = (point[0] / (w + 1)) * (x_size / 2)
+#         point[1] = (point[1] / (w + 1)) * (y_size / 2)
+
+#         points[idx] = point
+
+#     print(f'AFTER ADJ: {points}')
+
+
 ###########################
 # Command handlers
 ###########################
@@ -63,6 +83,11 @@ def handle_pos(line: str, state: State):
 
     per = int(parts[1])
     
+    # state.position = _adjust_for_view_size(
+    #     np.array(_parse_parameterized_number_array(per, parts, float)),
+    #     state.out_dim_x,
+    #     state.out_dim_y,
+    # )
     state.position = np.array(_parse_parameterized_number_array(per, parts, float))
 
     print(f'Finished parsing position array: {state.position}\n')

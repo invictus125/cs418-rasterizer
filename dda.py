@@ -3,6 +3,17 @@ import numpy as np
 from math import ceil
 
 
+def _get_color(vector: list[float], state):
+    offset = state.vals_per_position
+    color_length = state.vals_per_color
+
+    a = 255
+    if color_length == 4:
+        a = round(vector[offset + 3] * 255)
+
+    return (round(vector[offset] * 255), round(vector[offset+1] * 255), round(vector[offset+2] * 255), a)
+
+
 class DDAEdge:
     def __init__(
             self,
@@ -51,13 +62,13 @@ def scan_line(left, right, colors, state: State):
     spot = x_edge.get_current_point()
 
     # Traverse horizontally and find pixel coords
+    y_val = int(left[1])
     while spot is not None:
-        print(f'pixel found: ({spot[0]}, {left[1]})')
+        x_val = int(spot[0])
+        color = _get_color(spot, state)
+        print(f'pixel found: {spot} => ({x_val}, {y_val}) -> {color}')
 
-        # TODO: interpolate color
-
-
-        # state.out_img.im.putpixel((spot[0], left[1]), (r,g,b,a))
+        state.out_img.im.putpixel((x_val, y_val), color)
 
         spot = x_edge.step()
 
@@ -66,9 +77,10 @@ def draw_triangle(place: int, state: State):
     points = state.position[place:place+3]
     colors = state.color[place:place+3]
 
-    p1 = points[0,:]
-    p2 = points[1,:]
-    p3 = points[2,:]
+    # Combine points and colors so we can interpolate them as one operation
+    p1 = np.concatenate([points[0], colors[0]])
+    p2 = np.concatenate([points[1], colors[1]])
+    p3 = np.concatenate([points[2], colors[2]])
 
     # Construct edges of triangle in order of y-values:
     # tb = top to bottom

@@ -6,4 +6,6 @@ class State:
     out_dim_x: int
     out_dim_y: int
     position: list[list[float]]
+    vals_per_position: int
     color: list[list[int]]
+    vals_per_color: int

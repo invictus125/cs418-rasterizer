@@ -89,6 +89,7 @@ def handle_pos(line: str, state: State):
     #     state.out_dim_y,
     # )
     state.position = np.array(_parse_parameterized_number_array(per, parts, float))
+    state.vals_per_position = per
 
     print(f'Finished parsing position array: {state.position}\n')
 
@@ -102,6 +103,7 @@ def handle_color(line: str, state: State):
     per = int(parts[1])
     
     state.color = np.array(_parse_parameterized_number_array(per, parts, int))
+    state.vals_per_color = per
 
     print(f'Finished parsing color array: {state.color}\n')
 

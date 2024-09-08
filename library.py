@@ -42,8 +42,6 @@ def _parse_parameterized_number_array(per_tuple: int, part_array: list[int | flo
 
 def _apply_screen_coords(points: list[list[float]], x_size: int, y_size: int):
     points = np.array(points)
-
-    print(f'BEFORE ADJ: {points}')
     for idx in range(np.shape(points)[1]):
         point = points[idx][:]
         
@@ -58,7 +56,8 @@ def _apply_screen_coords(points: list[list[float]], x_size: int, y_size: int):
 
         points[idx] = point
 
-    print(f'AFTER ADJ: {points}')
+    print(f'After apply screen coords: {points}')
+    return points
 
 
 ###########################

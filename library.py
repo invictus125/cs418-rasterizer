@@ -83,14 +83,14 @@ def handle_pos(line: str, state: State):
 
     per = int(parts[1])
     
+    init_position = _parse_parameterized_number_array(per, parts, float)
+    print(f'Parsed position array: {init_position}\n')
     state.position = _apply_screen_coords(
-        np.array(_parse_parameterized_number_array(per, parts, float)),
+        np.array(init_position),
         state.out_dim_x,
         state.out_dim_y,
     )
     state.vals_per_position = per
-
-    print(f'Finished parsing position array: {state.position}\n')
 
 
 def handle_color(line: str, state: State):

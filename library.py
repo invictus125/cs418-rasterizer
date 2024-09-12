@@ -117,11 +117,11 @@ def handle_dat(line: str, state: State):
     count = int(parts[2])
 
     place = first
-    while place < count:
+    while place < (first + count):
         dda.draw_triangle(place, state)
         place += 3
 
-    print(f'Finished drawing triangles from {first} to {count}')
+    print(f'Finished drawing triangles from {first} to {first + count}')
 
 
 def get_handler(line: str):

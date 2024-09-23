@@ -51,8 +51,8 @@ def _apply_screen_coords(points: list[list[float]], x_size: int, y_size: int):
         point[1] = point[1] / w
 
         # Move X and Y coords according to the available viewport
-        point[0] = ((point[0] + 1) / 2) * x_size
-        point[1] = ((point[1] + 1) / 2) * y_size
+        point[0] = ((point[0] + 1.0) / 2.0) * x_size
+        point[1] = ((point[1] + 1.0) / 2.0) * y_size
 
         points[idx] = point
 
@@ -101,7 +101,7 @@ def handle_color(line: str, state: State):
 
     per = int(parts[1])
     
-    state.color = np.array(_parse_parameterized_number_array(per, parts, int))
+    state.color = np.array(_parse_parameterized_number_array(per, parts, float))
     state.vals_per_color = per
 
     print(f'Finished parsing color array: {state.color}\n')

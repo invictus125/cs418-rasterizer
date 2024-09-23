@@ -73,12 +73,17 @@ class DDAEdge:
 def scan_line(left, right, state: State):
     y_val = int(left[1])
 
-    print(f'scan_line: Scanning {left} -> {right}')
     if left[0] == right[0] or y_val >= state.out_dim_y:
         return
-
+    
     x_edge = DDAEdge(left, right, 0)
     spot = x_edge.get_current_point()
+
+    # Check for the case where we can't find a pixel without hitting the bound
+    if right[0] <= spot[0]:
+        return
+
+    print(f'scan_line: Scanning {left} -> {right}')
 
     # Traverse horizontally and find pixel coords
     
@@ -99,6 +104,7 @@ def scan_line(left, right, state: State):
 
 
 def draw_triangle(place: int, state: State):
+    corner_turned = False
     points = state.position[place:place+3]
     colors = state.color[place:place+3]
     print(f'draw_triangle: drawing with points {points} and colors {colors}')
@@ -119,20 +125,27 @@ def draw_triangle(place: int, state: State):
 
     print(f'draw_triangle: edges\n\tTB: {tb}\n\tTM: {tm}\n\tMB: {mb}')
 
-    if tb[1][0] < tm[1][0]:
-        left_edge = DDAEdge(tb[0], tb[1], 1)
-        right_edge = DDAEdge(tm[0], tm[1], 1)
-        print('draw_triangle: left edge is tb, right edge is tm')
+    # Set candidates for left and right edges to trace
+    c1 = tb
+    c2 = tm
+    if tm[0][1] == tm[1][1]:
+        # Horizontal edge for TM, meaning the edges we need to trace between are TB and MB
+        c2 = mb
+        corner_turned = True
+    elif mb[0][1] == mb[1][1]:
+        corner_turned = True
+
+    if c1[0][0] < c2[0][0] or (c1[0][0] == c2[0][0] and c1[1][0] < c2[1][0]):
+        left_edge = DDAEdge(c1[0], c1[1], 1)
+        right_edge = DDAEdge(c2[0], c2[1], 1)
     else:
-        left_edge = DDAEdge(tm[0], tm[1], 1)
-        right_edge = DDAEdge(tb[0], tb[1], 1)
-        print('draw_triangle: left edge is tm, right edge is tb')
+        left_edge = DDAEdge(c2[0], c2[1], 1)
+        right_edge = DDAEdge(c1[0], c1[1], 1)
 
     # Get starting spots after offset is applied
     spot_left = left_edge.get_current_point()
     spot_right = right_edge.get_current_point()
 
-    corner_turned = False
     while spot_left is not None and spot_right is not None:
         scan_line(spot_left, spot_right, state)
 

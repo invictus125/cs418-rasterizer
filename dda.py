@@ -70,11 +70,18 @@ class DDAEdge:
         return self.spot
 
 
-def scan_line(left, right, state: State):
-    y_val = int(left[1])
+def scan_line(p1, p2, state: State):
+    y_val = int(p1[1])
 
-    if left[0] == right[0] or y_val >= state.out_dim_y:
+    if p1[0] == p2[0] or y_val >= state.out_dim_y:
         return
+    
+    if p1[0] < p2[0]:
+        left = p1
+        right = p2
+    else:
+        left = p2
+        right = p1
     
     x_edge = DDAEdge(left, right, 0)
     spot = x_edge.get_current_point()
@@ -103,10 +110,15 @@ def scan_line(left, right, state: State):
         spot = x_edge.step()
 
 
-def draw_triangle(place: int, state: State):
+def draw_triangle(elem_idx: list[int], state: State):
     corner_turned = False
-    points = state.position[place:place+3]
-    colors = state.color[place:place+3]
+    points = []
+    colors = []
+
+    for idx in elem_idx:
+        points.append(state.position[idx])
+        colors.append(state.color[idx])
+
     print(f'draw_triangle: drawing with points {points} and colors {colors}')
 
     # Combine points and colors so we can interpolate them as one operation
@@ -135,31 +147,27 @@ def draw_triangle(place: int, state: State):
     elif mb[0][1] == mb[1][1]:
         corner_turned = True
 
-    if c1[0][0] < c2[0][0] or (c1[0][0] == c2[0][0] and c1[1][0] < c2[1][0]):
-        left_edge = DDAEdge(c1[0], c1[1], 1)
-        right_edge = DDAEdge(c2[0], c2[1], 1)
-    else:
-        left_edge = DDAEdge(c2[0], c2[1], 1)
-        right_edge = DDAEdge(c1[0], c1[1], 1)
+    edge1 = DDAEdge(c1[0], c1[1], 1)
+    edge2 = DDAEdge(c2[0], c2[1], 1)
 
     # Get starting spots after offset is applied
-    spot_left = left_edge.get_current_point()
-    spot_right = right_edge.get_current_point()
+    spot1 = edge1.get_current_point()
+    spot2 = edge2.get_current_point()
 
-    while spot_left is not None and spot_right is not None:
-        scan_line(spot_left, spot_right, state)
+    while spot1 is not None and spot2 is not None:
+        scan_line(spot1, spot2, state)
 
-        spot_left = left_edge.step()
-        spot_right = right_edge.step()
+        spot1 = edge1.step()
+        spot2 = edge2.step()
 
         # Turn the corner if needed
-        if not corner_turned and spot_left is None:
-            left_edge = DDAEdge(mb[0], mb[1], 1)
-            spot_left = left_edge.get_current_point()
+        if not corner_turned and spot1 is None:
+            edge1 = DDAEdge(mb[0], mb[1], 1)
+            spot1 = edge1.get_current_point()
             corner_turned = True
-            print('draw_triangle: corner turned on left')
-        elif not corner_turned and spot_right is None:
-            right_edge = DDAEdge(mb[0], mb[1], 1)
-            spot_right = right_edge.get_current_point()
+            print('draw_triangle: corner turned')
+        elif not corner_turned and spot2 is None:
+            edge2 = DDAEdge(mb[0], mb[1], 1)
+            spot2 = edge2.get_current_point()
             corner_turned = True
-            print('draw_triangle: corner turned on right')
+            print('draw_triangle: corner turned')

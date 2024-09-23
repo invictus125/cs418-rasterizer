@@ -14,18 +14,20 @@ PNG_LINE = re.compile("^png\s")
 DAT_LINE = re.compile("^drawArraysTriangles")
 COLOR_LINE = re.compile("^color")
 POSITION_LINE = re.compile("^position")
+ELEMENTS_LINE = re.compile("^elements")
+DET_LINE = re.compile("^drawElementsTriangles")
 
 
 ###########################
 # Helpers
 ###########################
-def _parse_parameterized_number_array(per_tuple: int, part_array: list[int | float], cast_type: type):
+def _parse_parameterized_number_array(per_tuple: int, part_array: list[int | float], cast_type: type, offset=2):
     spot = 0
     pos_tuple = []
 
     parsed = []
 
-    for pos_part in part_array[2:]:
+    for pos_part in part_array[offset:]:
         if spot >= per_tuple:
             parsed.append(pos_tuple.copy())
             pos_tuple = []
@@ -118,10 +120,39 @@ def handle_dat(line: str, state: State):
 
     place = first
     while place < (first + count):
-        dda.draw_triangle(place, state)
+        dda.draw_triangle([place, place + 1, place + 2], state)
         place += 3
 
     print(f'Finished drawing triangles from {first} to {first + count}')
+
+
+def handle_elements(line: str, state: State):
+    parts = line.split()
+
+    if len(parts) < 4:
+        raise ValueError(f'Invalid elements line: {line}\n')
+    
+    state.elements = np.array(_parse_parameterized_number_array(1, parts, int, offset=1)).flatten()
+
+    print(f'Finished parsing elements array: {state.elements}\n')
+
+
+def handle_det(line: str, state: State):
+    parts = line.split()
+
+    if len(parts) < 3:
+        raise ValueError(f'Invalid drawElementsTriangles line: {line}\n')
+    
+    count = int(parts[1])
+    offset = int(parts[2])
+
+    place = offset
+    target = count + offset
+    while place < target:
+        dda.draw_triangle([state.elements[place], state.elements[place + 1], state.elements[place + 2]], state)
+        place = place + 3
+
+    print(f'Finished drawing triangles by elements from {offset} to {target}\n')
 
 
 def get_handler(line: str):
@@ -133,6 +164,10 @@ def get_handler(line: str):
         return handle_color
     elif DAT_LINE.match(line):
         return handle_dat
+    elif ELEMENTS_LINE.match(line):
+        return handle_elements
+    elif DET_LINE.match(line):
+        return handle_det
     else:
         raise ValueError(f'Unhandled command: {line}\n')
     

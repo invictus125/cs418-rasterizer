@@ -8,4 +8,5 @@ class State:
     position: list[list[float]]
     vals_per_position: int
     color: list[list[int]]
+    elements: list[int]
     vals_per_color: int

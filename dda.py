@@ -96,15 +96,13 @@ def scan_line(p1, p2, state: State):
     
     while spot is not None:
         x_val = int(spot[0])
-        z_val = int(spot[2])
+        z_val = spot[2]
 
         # Sanity-check image bounds
         if x_val >= state.out_dim_x:
             break
 
         color = _get_color(spot, state)
-
-        # print(f'\tpixel found: ({x_val}, {y_val}) -> {color}')
 
         if state.depth:
             pixel = Pixel()

@@ -27,7 +27,7 @@ class DDAEdge:
 
         # Calculate step vector
         self.step_direction = 1 if self.end2[step_dimension] > self.end1[step_dimension] else -1
-        if abs(self.end2[self.step_dimension] - self.end1[self.step_dimension]) <= 0.3333333:
+        if ceil(self.end2[self.step_dimension]) == ceil(self.end1[self.step_dimension]):
             # Handle case where there is no step needed and avoid divide by zero
             vec_shape = np.shape(self.end2)
             self.step_vector = np.zeros(vec_shape)

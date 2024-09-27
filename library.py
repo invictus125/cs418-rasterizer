@@ -16,6 +16,7 @@ COLOR_LINE = re.compile("^color")
 POSITION_LINE = re.compile("^position")
 ELEMENTS_LINE = re.compile("^elements")
 DET_LINE = re.compile("^drawElementsTriangles")
+DEPTH_LINE = re.compile("^depth")
 
 
 ###########################
@@ -155,6 +156,17 @@ def handle_det(line: str, state: State):
     print(f'Finished drawing triangles by elements from {offset} to {target}\n')
 
 
+def handle_depth(line: str, state: State):
+    state.depth = True
+    state.depth_buffer = []
+    for i in range(state.out_dim_y):
+        state.depth_buffer.append([])
+        for j in range(state.out_dim_x):
+            state.depth_buffer[i].append([])
+
+    print(f'Depth buffer enabled\n')
+
+
 def get_handler(line: str):
     if PNG_LINE.match(line):
         return handle_png
@@ -168,6 +180,8 @@ def get_handler(line: str):
         return handle_elements
     elif DET_LINE.match(line):
         return handle_det
+    elif DEPTH_LINE.match(line):
+        return handle_depth
     else:
         raise ValueError(f'Unhandled command: {line}\n')
     
@@ -189,3 +203,11 @@ def write_image(state: State):
     filename = state.out_file_name
     state.out_img.save(filename)
     print(f'Wrote {filename}')
+
+
+def process_depth_buffer(state: State):
+    for y in range(state.out_dim_y):
+        for x in range(state.out_dim_x):
+            if len(state.depth_buffer[y][x]):
+                pixel = sorted(state.depth_buffer[y][x], key=lambda p: p.z_coord)[0]
+                state.out_img.im.putpixel((pixel.x_coord, pixel.y_coord), pixel.color)

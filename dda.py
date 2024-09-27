@@ -1,4 +1,4 @@
-from state import State
+from state import State, Pixel
 import numpy as np
 from math import ceil
 
@@ -96,6 +96,7 @@ def scan_line(p1, p2, state: State):
     
     while spot is not None:
         x_val = int(spot[0])
+        z_val = spot[2]
 
         # Sanity-check image bounds
         if x_val >= state.out_dim_x:
@@ -103,9 +104,15 @@ def scan_line(p1, p2, state: State):
 
         color = _get_color(spot, state)
 
-        # print(f'\tpixel found: ({x_val}, {y_val}) -> {color}')
-
-        state.out_img.im.putpixel((x_val, y_val), color)
+        if state.depth:
+            pixel = Pixel()
+            pixel.x_coord = x_val
+            pixel.y_coord = y_val
+            pixel.z_coord = z_val
+            pixel.color = color
+            state.depth_buffer[x_val][y_val].append(pixel)
+        else:
+            state.out_img.im.putpixel((x_val, y_val), color)
 
         spot = x_edge.step()
 

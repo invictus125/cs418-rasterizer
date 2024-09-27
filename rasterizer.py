@@ -1,4 +1,4 @@
-from library import should_run, get_handler, write_image
+from library import should_run, get_handler, write_image, process_depth_buffer
 from state import State
 import sys
 
@@ -13,5 +13,8 @@ with open(sys.argv[1]) as file:
             get_handler(line)(line, master_state)
 
     file.close()
+
+if master_state.depth:
+    process_depth_buffer(master_state)
 
 write_image(master_state)

@@ -3,7 +3,7 @@ import numpy as np
 from math import ceil, floor
 
 
-def _get_color(vector: list[float], state):
+def _get_color(vector: list[float], state: State):
     offset = state.vals_per_position
     color_length = state.vals_per_color
     w_offs = vector[len(vector) - 1]
@@ -15,6 +15,11 @@ def _get_color(vector: list[float], state):
     r = vector[offset] / w_offs
     g = vector[offset + 1] / w_offs
     b = vector[offset + 2] / w_offs
+
+    if state.srgb:
+        r = r ** (1 / 2.2)
+        g = g ** (1 / 2.2)
+        b = b ** (1 / 2.2)
 
     return (floor(r * 255), floor(g * 255), floor(b * 255), a)
 

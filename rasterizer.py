@@ -8,9 +8,12 @@ master_state = State()
 lines = []
 with open(sys.argv[1]) as file:
     for line in file:
+        line = line.strip()
         if should_run(line):
             print(line)
-            get_handler(line)(line, master_state)
+            handler = get_handler(line)
+            if handler is not None:
+                handler(line, master_state)
 
     file.close()
 

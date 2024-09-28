@@ -183,7 +183,8 @@ def get_handler(line: str):
     elif DEPTH_LINE.match(line):
         return handle_depth
     else:
-        raise ValueError(f'Unhandled command: {line}\n')
+        print(f'Unhandled command: {line}\n')
+        return None
     
 
 ###########################

@@ -17,6 +17,7 @@ POSITION_LINE = re.compile("^position")
 ELEMENTS_LINE = re.compile("^elements")
 DET_LINE = re.compile("^drawElementsTriangles")
 DEPTH_LINE = re.compile("^depth")
+SRGB_LINE = re.compile("^sRGB")
 
 
 ###########################
@@ -141,6 +142,12 @@ def handle_depth(line: str, state: State):
     print(f'Depth buffer enabled\n')
 
 
+def handle_srgb(line: str, state: State):
+    state.srgb = True
+
+    print(f'sRGB enabled\n')
+
+
 def get_handler(line: str):
     if PNG_LINE.match(line):
         return handle_png
@@ -156,6 +163,8 @@ def get_handler(line: str):
         return handle_det
     elif DEPTH_LINE.match(line):
         return handle_depth
+    elif SRGB_LINE.match(line):
+        return handle_srgb
     else:
         print(f'Unhandled command: {line}\n')
         return None

@@ -20,6 +20,8 @@ class State:
     vals_per_color: int
     depth: bool
     depth_buffer: list[list[list[Pixel]]]
+    srgb: bool
 
     def __init__(self):
         self.depth = False
+        self.srgb = False

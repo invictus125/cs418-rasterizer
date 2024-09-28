@@ -21,7 +21,9 @@ class State:
     depth: bool
     depth_buffer: list[list[list[Pixel]]]
     srgb: bool
+    hyp: bool
 
     def __init__(self):
         self.depth = False
         self.srgb = False
+        self.hyp = False

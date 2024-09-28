@@ -11,13 +11,14 @@ import numpy as np
 EMPTY_LINE = re.compile("^\s*$")
 COMMENT_LINE = re.compile("^#")
 PNG_LINE = re.compile("^png\s")
-DAT_LINE = re.compile("^drawArraysTriangles")
-COLOR_LINE = re.compile("^color")
-POSITION_LINE = re.compile("^position")
-ELEMENTS_LINE = re.compile("^elements")
-DET_LINE = re.compile("^drawElementsTriangles")
+DAT_LINE = re.compile("^drawArraysTriangles\s")
+COLOR_LINE = re.compile("^color\s")
+POSITION_LINE = re.compile("^position\s")
+ELEMENTS_LINE = re.compile("^elements\s")
+DET_LINE = re.compile("^drawElementsTriangles\s")
 DEPTH_LINE = re.compile("^depth")
 SRGB_LINE = re.compile("^sRGB")
+HYP_LINE = re.compile("^hyp")
 
 
 ###########################
@@ -148,6 +149,12 @@ def handle_srgb(line: str, state: State):
     print(f'sRGB enabled\n')
 
 
+def handle_hyp(line: str, state: State):
+    state.hyp = True
+
+    print(f'hyperbolic interpolation enabled\n')
+
+
 def get_handler(line: str):
     if PNG_LINE.match(line):
         return handle_png
@@ -165,6 +172,8 @@ def get_handler(line: str):
         return handle_depth
     elif SRGB_LINE.match(line):
         return handle_srgb
+    elif HYP_LINE.match(line):
+        return handle_hyp
     else:
         print(f'Unhandled command: {line}\n')
         return None

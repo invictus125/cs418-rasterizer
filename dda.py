@@ -146,12 +146,15 @@ def _apply_screen_coordinates(point, state: State):
 
 def _set_up_point_vec(coords, color, state: State):
     w = coords[3] if len(coords) == 4 else 1
-    coords = np.array(coords) / w
 
-    # TODO: hyp - instead of just dividing coords, construct the vector and divide the whole thing
+    if not state.hyp:
+        coords = np.array(coords) / w
 
     # The 1 at the end is for 1/w if we implement hyp
     p = np.concatenate([coords, color, [1]])
+
+    if state.hyp:
+        p = p / w
 
     return p
 

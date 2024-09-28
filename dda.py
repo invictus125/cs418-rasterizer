@@ -56,9 +56,9 @@ class DDAEdge:
         self.spot = np.add(self.spot, self.step_vector)
         if (
             # Check whether we're beyond the end point
-            (self.step_direction > 0 and self.spot[self.step_dimension] > self.end2[self.step_dimension])
+            (self.step_direction > 0 and self.spot[self.step_dimension] >= self.end2[self.step_dimension])
             or
-            (self.step_direction < 0 and self.spot[self.step_dimension] < self.end2[self.step_dimension])
+            (self.step_direction < 0 and self.spot[self.step_dimension] <= self.end2[self.step_dimension])
             or
             # Check whether we failed to move with the step operation
             (self.spot[self.step_dimension] == original_pos_step_dim)
@@ -108,6 +108,8 @@ def scan_line(p1, p2, state: State):
             break
 
         color = _get_color(spot, state)
+
+        print(f'\tPoint: {x_val}, {y_val}')
 
         if state.depth:
             pixel = Pixel()

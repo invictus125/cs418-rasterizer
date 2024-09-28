@@ -18,5 +18,6 @@ start cmd.exe /c perspective.cmd
 start cmd.exe /c smallgap.cmd
 start cmd.exe /c smoothcolor.cmd
 start cmd.exe /c srgb.cmd
+start cmd.exe /c depth.cmd
 
 cd ..

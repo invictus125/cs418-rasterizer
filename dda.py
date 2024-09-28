@@ -3,6 +3,13 @@ import numpy as np
 from math import ceil, floor
 
 
+def _transform_srgb(value: float):
+    if value > 0.0031308:
+        return ((1.055 * value) ** (1/2.4)) - 0.055
+    else:
+        return 12.92 * value
+
+
 def _get_color(vector: list[float], state: State):
     offset = state.vals_per_position
     color_length = state.vals_per_color
@@ -17,9 +24,9 @@ def _get_color(vector: list[float], state: State):
     b = vector[offset + 2] / w_offs
 
     if state.srgb:
-        r = r ** (1 / 2.2)
-        g = g ** (1 / 2.2)
-        b = b ** (1 / 2.2)
+        r = _transform_srgb(r)
+        g = _transform_srgb(g)
+        b = _transform_srgb(b)
 
     return (floor(r * 255), floor(g * 255), floor(b * 255), a)
 

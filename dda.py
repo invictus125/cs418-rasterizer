@@ -42,8 +42,13 @@ class DDAEdge:
         self.end2 = np.array(end2)
         self.step_dimension = step_dimension
 
+        # Always step positive, swap the ends if needed to achieve this
+        if self.end1[step_dimension] > self.end2[step_dimension]:
+            end2 = self.end1
+            self.end1 = self.end2
+            self.end2 = end2
+
         # Calculate step vector
-        self.step_direction = 1 if self.end2[step_dimension] > self.end1[step_dimension] else -1
         if ceil(self.end2[self.step_dimension]) == ceil(self.end1[self.step_dimension]):
             # Handle case where there is no step needed and avoid divide by zero
             vec_shape = np.shape(self.end2)
@@ -51,7 +56,7 @@ class DDAEdge:
             offset_vector = np.zeros(vec_shape)
             offset_vector[step_dimension] = ceil(self.end1[self.step_dimension]) - self.end1[self.step_dimension]
         else:
-            self.step_vector = self.step_direction * np.array(
+            self.step_vector = np.array(
                 np.subtract(self.end2, self.end1)
                 / (self.end2[self.step_dimension] - self.end1[self.step_dimension])
             )
@@ -68,9 +73,7 @@ class DDAEdge:
         self.spot = np.add(self.spot, self.step_vector)
         if (
             # Check whether we're beyond the end point
-            (self.step_direction > 0 and self.spot[self.step_dimension] >= self.end2[self.step_dimension])
-            or
-            (self.step_direction < 0 and self.spot[self.step_dimension] <= self.end2[self.step_dimension])
+            self.spot[self.step_dimension] >= self.end2[self.step_dimension]
             or
             # Check whether we failed to move with the step operation
             (self.spot[self.step_dimension] == original_pos_step_dim)
@@ -193,11 +196,11 @@ def draw_triangle(elem_idx: list[int], state: State):
     # Set candidates for left and right edges to trace
     c1 = tb
     c2 = tm
-    if tm[0][1] == tm[1][1]:
+    if ceil(tm[0][1]) == ceil(tm[1][1]):
         # Horizontal edge for TM, meaning the edges we need to trace between are TB and MB
         c2 = mb
         corner_turned = True
-    elif mb[0][1] == mb[1][1]:
+    elif ceil(mb[0][1]) == ceil(mb[1][1]):
         corner_turned = True
 
     edge1 = DDAEdge(c1[0], c1[1], 1)

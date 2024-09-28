@@ -43,24 +43,24 @@ def _parse_parameterized_number_array(per_tuple: int, part_array: list[int | flo
     return parsed
 
 
-def _apply_screen_coords(points: list[list[float]], x_size: int, y_size: int):
-    points = np.array(points)
-    for idx in range(np.shape(points)[0]):
-        point = points[idx][:]
+# def _apply_screen_coords(points: list[list[float]], x_size: int, y_size: int):
+#     points = np.array(points)
+#     for idx in range(np.shape(points)[0]):
+#         point = points[idx][:]
         
-        # Divide by w
-        w = point[3] if len(point) == 4 else 1
-        point[0] = point[0] / w
-        point[1] = point[1] / w
+#         # Divide by w
+#         w = point[3] if len(point) == 4 else 1
+#         point[0] = point[0] / w
+#         point[1] = point[1] / w
 
-        # Move X and Y coords according to the available viewport
-        point[0] = ((point[0] + 1.0) / 2.0) * x_size
-        point[1] = ((point[1] + 1.0) / 2.0) * y_size
+#         # Move X and Y coords according to the available viewport
+#         point[0] = ((point[0] + 1.0) / 2.0) * x_size
+#         point[1] = ((point[1] + 1.0) / 2.0) * y_size
 
-        points[idx] = point
+#         points[idx] = point
 
-    print(f'After apply screen coords: {points}')
-    return points
+#     print(f'After apply screen coords: {points}')
+#     return points
 
 
 ###########################
@@ -86,13 +86,15 @@ def handle_pos(line: str, state: State):
 
     per = int(parts[1])
     
-    init_position = _parse_parameterized_number_array(per, parts, float)
-    print(f'Parsed position array: {init_position}\n')
-    state.position = _apply_screen_coords(
-        np.array(init_position),
-        state.out_dim_x,
-        state.out_dim_y,
-    )
+    # init_position = _parse_parameterized_number_array(per, parts, float)
+    # print(f'Parsed position array: {init_position}\n')
+    # state.position = _apply_screen_coords(
+    #     np.array(init_position),
+    #     state.out_dim_x,
+    #     state.out_dim_y,
+    # )
+    state.position = np.array(_parse_parameterized_number_array(per, parts, float))
+    print(f'Parsed position array: {state.position}\n')
     state.vals_per_position = per
 
 

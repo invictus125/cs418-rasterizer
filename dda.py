@@ -6,12 +6,17 @@ from math import ceil
 def _get_color(vector: list[float], state):
     offset = state.vals_per_position
     color_length = state.vals_per_color
+    w_offs = vector[len(vector) - 1]
 
     a = 255
     if color_length == 4:
-        a = round(vector[offset + 3] * 255)
+        a = round((vector[offset + 3] / w_offs) * 255)
 
-    return (round(vector[offset] * 255), round(vector[offset+1] * 255), round(vector[offset+2] * 255), a)
+    r = vector[offset] / w_offs
+    g = vector[offset + 1] / w_offs
+    b = vector[offset + 2] / w_offs
+
+    return (round(r * 255), round(g * 255), round(b * 255), a)
 
 
 class DDAEdge:
@@ -117,6 +122,14 @@ def scan_line(p1, p2, state: State):
         spot = x_edge.step()
 
 
+def _apply_screen_coordinates(point, state: State):
+    # Move X and Y coords according to the available viewport
+    point[0] = ((point[0] + 1.0) / 2.0) * state.out_dim_x
+    point[1] = ((point[1] + 1.0) / 2.0) * state.out_dim_y
+
+    return point
+
+
 def draw_triangle(elem_idx: list[int], state: State):
     corner_turned = False
     points = []
@@ -128,10 +141,24 @@ def draw_triangle(elem_idx: list[int], state: State):
 
     print(f'draw_triangle: drawing with points {points} and colors {colors}')
 
-    # Combine points and colors so we can interpolate them as one operation
-    p1 = np.concatenate([points[0], colors[0]])
-    p2 = np.concatenate([points[1], colors[1]])
-    p3 = np.concatenate([points[2], colors[2]])
+    # Combine points and colors so we can interpolate them as one operation. Add 1 at end for 1/w
+    p1 = np.concatenate([points[0], colors[0], [1]])
+    p2 = np.concatenate([points[1], colors[1], [1]])
+    p3 = np.concatenate([points[2], colors[2], [1]])
+
+    # Apply perspective by dividing by w
+    has_w = len(points[0]) == 4
+    p1_w = p1[3] if has_w else 1
+    p2_w = p2[3] if has_w else 1
+    p3_w = p3[3] if has_w else 1
+    p1 = p1 / p1_w
+    p2 = p2 / p2_w
+    p3 = p3 / p3_w
+
+    # Apply screen coordinates based on viewport size
+    p1 = _apply_screen_coordinates(p1, state)
+    p2 = _apply_screen_coordinates(p2, state)
+    p3 = _apply_screen_coordinates(p3, state)
 
     # Construct edges of triangle in order of y-values:
     # tb = top to bottom

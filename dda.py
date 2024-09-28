@@ -1,6 +1,6 @@
 from state import State, Pixel
 import numpy as np
-from math import ceil
+from math import ceil, floor
 
 
 def _get_color(vector: list[float], state):
@@ -16,7 +16,7 @@ def _get_color(vector: list[float], state):
     g = vector[offset + 1] / w_offs
     b = vector[offset + 2] / w_offs
 
-    return (round(r * 255), round(g * 255), round(b * 255), a)
+    return (floor(r * 255), floor(g * 255), floor(b * 255), a)
 
 
 class DDAEdge:
@@ -95,7 +95,7 @@ def scan_line(p1, p2, state: State):
     if right[0] <= spot[0]:
         return
 
-    print(f'scan_line: Scanning {left} -> {right}')
+    print(f'scan_line: Scanning ({left[0]}, {left[1]}, {left[2]}, {left[3]}, {left[4] / left[7]}, {left[5] / left[7]}, {left[6] / left[7]}) -> ({right[0]}, {right[1]}, {right[2]}, {right[3]}, {right[4] / right[7]}, {right[5] / right[7]}, {right[6] / right[7]})')
 
     # Traverse horizontally and find pixel coords
     
@@ -109,7 +109,7 @@ def scan_line(p1, p2, state: State):
 
         color = _get_color(spot, state)
 
-        print(f'\tPoint: {x_val}, {y_val}')
+        print(f'\tPoint: ({x_val}, {y_val}) Raw color: ({spot[4] / spot[7]}, {spot[5] / spot[7]}, {spot[6] / spot[7]})')
 
         if state.depth:
             pixel = Pixel()
@@ -132,6 +132,18 @@ def _apply_screen_coordinates(point, state: State):
     return point
 
 
+def _set_up_point_vec(coords, color, state: State):
+    w = coords[3] if len(coords) == 4 else 1
+    coords = np.array(coords) / w
+
+    # TODO: hyp - instead of just dividing coords, construct the vector and divide the whole thing
+
+    # The 1 at the end is for 1/w if we implement hyp
+    p = np.concatenate([coords, color, [1]])
+
+    return p
+
+
 def draw_triangle(elem_idx: list[int], state: State):
     corner_turned = False
     points = []
@@ -143,19 +155,9 @@ def draw_triangle(elem_idx: list[int], state: State):
 
     print(f'draw_triangle: drawing with points {points} and colors {colors}')
 
-    # Combine points and colors so we can interpolate them as one operation. Add 1 at end for 1/w
-    p1 = np.concatenate([points[0], colors[0], [1]])
-    p2 = np.concatenate([points[1], colors[1], [1]])
-    p3 = np.concatenate([points[2], colors[2], [1]])
-
-    # Apply perspective by dividing by w
-    has_w = len(points[0]) == 4
-    p1_w = p1[3] if has_w else 1
-    p2_w = p2[3] if has_w else 1
-    p3_w = p3[3] if has_w else 1
-    p1 = p1 / p1_w
-    p2 = p2 / p2_w
-    p3 = p3 / p3_w
+    p1 = _set_up_point_vec(points[0], colors[0], state)
+    p2 = _set_up_point_vec(points[1], colors[1], state)
+    p3 = _set_up_point_vec(points[2], colors[2], state)
 
     # Apply screen coordinates based on viewport size
     p1 = _apply_screen_coordinates(p1, state)

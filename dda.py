@@ -3,6 +3,16 @@ import numpy as np
 from math import ceil, floor
 
 
+CLIPPING_MATRIX = np.array([
+    [1, 0, 0, 1],
+    [-1, 0, 0, 1],
+    [0, 1, 0, 1],
+    [0, -1, 0, 1],
+    [0, 0, 1, 1],
+    [0, 0, -1, 1],
+])
+
+
 def _transform_srgb(value: float):
     if value > 0.0031308:
         return ((1.055 * value) ** (1/2.4)) - 0.055
@@ -147,40 +157,93 @@ def _apply_screen_coordinates(point, state: State):
     return point
 
 
-def _set_up_point_vec(coords, color, state: State):
-    w = coords[3] if len(coords) == 4 else 1
-
-    if not state.hyp:
-        coords = np.array(coords) / w
-
+def _set_up_point_vec(coords, color):
     # The 1 at the end is for 1/w if we implement hyp
     p = np.concatenate([coords, color, [1]])
-
-    if state.hyp:
-        p = p / w
 
     return p
 
 
-def draw_triangle(elem_idx: list[int], state: State):
+def _clip_vertex(vertex, plane, distance):
+    pass
+
+
+def _clip_triangle(vertices):
+    new_triangles = [vertices]
+    triangles = None
+
+    for plane_idx in range(0, 6):
+        triangles = new_triangles
+        new_triangles = []
+
+        for tri_idx in range(np.shape(triangles[0])):
+            vertices = triangles[tri_idx]
+            usable_vertices = []
+
+            vertices_outside_plane = 0
+            for vert_idx in range(np.shape(vertices)[0]):
+                coords = np.array(vertices[vert_idx][0:4])
+                dist = np.dot(CLIPPING_MATRIX[plane_idx], coords)
+
+                if dist < 0:
+                    # Need to clip
+                    vertices_outside_plane += 1
+                    new_vertices = _clip_vertex(vertices[vert_idx], CLIPPING_MATRIX[plane_idx], dist)
+                    usable_vertices = np.concatenate([usable_vertices, new_vertices])
+                else:
+                    
+
+            if vertices_outside_plane == 0:
+                # This triangle is not in need of more processing
+                new_triangles.append(triangles[tri_idx])
+                continue
+
+            # We have new vertices to consider, create new triangles
+
+
+    
+    return triangles
+
+
+def _frustum_clipping(point_list, state: State):
+    # Determine if clipping is needed
+    if state.vals_per_position < 4:
+        return [point_list]
+    
+    # distances_per_vertex = []
+    # for idx in range(np.shape(vertices)[0]):
+    #     coords = np.array(vertices[idx][0:4])
+    #     dists = np.array(CLIPPING_MATRIX * coords)
+    #     if np.any(dists < 0):
+    #         clip = True
+    #     distances_per_vertex.append(dists)
+
+    # Otherwise we need to clip the triangle
+    return _clip_triangle(point_list)
+
+
+def _handle_w(point_list, state: State):
+    for idx in range(np.shape(point_list)[0]):
+        w = point_list[idx][3] if state.vals_per_position == 4 else 1
+        
+        if state.hyp:
+            point_list[idx] = np.array(point_list[idx]) / w
+        else:
+            point_list[idx][0:state.vals_per_position] = (np.array(point_list[idx][0:state.vals_per_position]) / w)[:]
+
+    return point_list
+
+
+def _draw_triangle_with_points(point_list, state: State):
     corner_turned = False
-    points = []
-    colors = []
 
-    for idx in elem_idx:
-        points.append(state.position[idx])
-        colors.append(state.color[idx])
-
-    print(f'draw_triangle: drawing with points {points} and colors {colors}')
-
-    p1 = _set_up_point_vec(points[0], colors[0], state)
-    p2 = _set_up_point_vec(points[1], colors[1], state)
-    p3 = _set_up_point_vec(points[2], colors[2], state)
+    # Divide by W
+    point_list = _handle_w(point_list, state)
 
     # Apply screen coordinates based on viewport size
-    p1 = _apply_screen_coordinates(p1, state)
-    p2 = _apply_screen_coordinates(p2, state)
-    p3 = _apply_screen_coordinates(p3, state)
+    p1 = _apply_screen_coordinates(point_list[0], state)
+    p2 = _apply_screen_coordinates(point_list[1], state)
+    p3 = _apply_screen_coordinates(point_list[2], state)
 
     # Construct edges of triangle in order of y-values:
     # tb = top to bottom
@@ -191,7 +254,7 @@ def draw_triangle(elem_idx: list[int], state: State):
     mb = [sorted_points[1], sorted_points[2]]
     tm = [sorted_points[0], sorted_points[1]]
 
-    print(f'draw_triangle: edges\n\tTB: {tb}\n\tTM: {tm}\n\tMB: {mb}')
+    print(f'_draw_triangle_with_points: edges\n\tTB: {tb}\n\tTM: {tm}\n\tMB: {mb}')
 
     # Set candidates for left and right edges to trace
     c1 = tb
@@ -221,9 +284,30 @@ def draw_triangle(elem_idx: list[int], state: State):
             edge1 = DDAEdge(mb[0], mb[1], 1)
             spot1 = edge1.get_current_point()
             corner_turned = True
-            print('draw_triangle: corner turned')
+            print('_draw_triangle_with_points: corner turned')
         elif not corner_turned and spot2 is None:
             edge2 = DDAEdge(mb[0], mb[1], 1)
             spot2 = edge2.get_current_point()
             corner_turned = True
-            print('draw_triangle: corner turned')
+            print('_draw_triangle_with_points: corner turned')
+
+
+def draw_triangle(elem_idx: list[int], state: State):
+    points = []
+    colors = []
+
+    for idx in elem_idx:
+        points.append(state.position[idx])
+        colors.append(state.color[idx])
+
+    print(f'draw_triangle: drawing with points {points} and colors {colors}')
+
+    p1 = _set_up_point_vec(points[0], colors[0])
+    p2 = _set_up_point_vec(points[1], colors[1])
+    p3 = _set_up_point_vec(points[2], colors[2])
+
+    # Do frustum clipping
+    triangles = _frustum_clipping([p1, p2, p3], state)
+
+    for idx in range(np.shape(triangles)[0]):
+        _draw_triangle_with_points(triangles[idx], state)
